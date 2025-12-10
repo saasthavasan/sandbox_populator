@@ -164,6 +164,8 @@ class BrowserDataGenerator:
         """
         ensure_directory(profile_path)
         db_path = Path(profile_path) / filename
+        if db_path.exists():
+            db_path.unlink()
 
         conn = sqlite3.connect(db_path)
         cur = conn.cursor()
@@ -228,6 +230,8 @@ class BrowserDataGenerator:
         """
         ensure_directory(profile_path)
         db_path = Path(profile_path) / "places.sqlite"
+        if db_path.exists():
+            db_path.unlink()
 
         conn = sqlite3.connect(db_path)
         cur = conn.cursor()
