@@ -146,6 +146,7 @@ def create_pdf(path, title, sections):
     import textwrap
 
     def _safe(text: str) -> str:
+        # Replace characters that can't be represented to avoid PDF errors
         return text.encode("latin-1", "replace").decode("latin-1")
 
     def _emit_wrapped_lines(pdf_obj, text, width=90):
@@ -158,8 +159,15 @@ def create_pdf(path, title, sections):
             chunks = [text[i:i + width] for i in range(0, len(text), width)]
         else:
             chunks = textwrap.wrap(text, width=width) or [text]
+
+        # Use explicit width to avoid zero-width errors from FPDF
+        avail_width = max(int(pdf_obj.w - pdf_obj.l_margin - pdf_obj.r_margin), 20)
         for chunk in chunks:
-            pdf_obj.multi_cell(0, 6, chunk)
+            try:
+                pdf_obj.multi_cell(avail_width, 6, chunk)
+            except Exception:
+                # As a last resort, shrink further
+                pdf_obj.multi_cell(max(avail_width - 20, 20), 6, chunk)
 
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
