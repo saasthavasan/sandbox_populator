@@ -143,11 +143,26 @@ def create_pdf(path, title, sections):
     sections: iterable of (heading, body_text)
     """
     from fpdf import FPDF
+    import textwrap
 
     def _safe(text: str) -> str:
         return text.encode("latin-1", "replace").decode("latin-1")
 
+    def _emit_wrapped_lines(pdf_obj, text, width=90):
+        """
+        Write text to the PDF with manual wrapping to avoid long unbroken lines.
+        """
+        text = _safe(text)
+        # If the line has no spaces, chunk it manually
+        if " " not in text and len(text) > width:
+            chunks = [text[i:i + width] for i in range(0, len(text), width)]
+        else:
+            chunks = textwrap.wrap(text, width=width) or [text]
+        for chunk in chunks:
+            pdf_obj.multi_cell(0, 6, chunk)
+
     pdf = FPDF()
+    pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
     pdf.set_font("Arial", "B", 16)
     pdf.cell(0, 10, _safe(title), ln=1)
@@ -158,7 +173,7 @@ def create_pdf(path, title, sections):
         pdf.cell(0, 8, _safe(heading), ln=1)
         pdf.set_font("Arial", "", 10)
         for line in body.splitlines():
-            pdf.multi_cell(0, 6, _safe(line))
+            _emit_wrapped_lines(pdf, line, width=90)
         pdf.ln(2)
 
     pdf.output(str(path))
