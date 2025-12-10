@@ -105,36 +105,36 @@ class SandboxPopulator:
             # Step 1: Create base structure
             self.create_base_directory_structure()
             
-            # Step 2: Browser data (history, credentials, cookies)
-            files = self.browser_gen.generate_all_browser_data()
-            self.created_files.extend(files)
-            
-            # Step 3: Tax documents
+            # Step 2: Tax documents
             files = self.tax_gen.generate_all_tax_documents()
             self.created_files.extend(files)
             
-            # Step 4: Investment documents
+            # Step 3: Investment documents
             files = self.investment_gen.generate_all_investment_documents()
             self.created_files.extend(files)
             
-            # Step 5: Office documents
+            # Step 4: Office documents
             files = self.office_gen.generate_all_office_documents()
             self.created_files.extend(files)
             
-            # Step 6: Personal folders
+            # Step 5: Personal folders
             files = self.personal_gen.generate_all_personal_folders()
             self.created_files.extend(files)
             
-            # Step 7: Credentials
+            # Step 6: Credentials
             files = self.creds_gen.generate_all_credentials()
             self.created_files.extend(files)
             
-            # Step 8: Application data
+            # Step 7: Application data
             files = self.app_gen.generate_all_application_data()
             self.created_files.extend(files)
             
-            # Step 9: Enhanced documents
+            # Step 8: Enhanced documents
             files = self.enhanced_gen.generate_all_enhanced_documents()
+            self.created_files.extend(files)
+
+            # Step 9: Browser data (history, credentials, cookies) last to avoid conflicts
+            files = self.browser_gen.generate_all_browser_data()
             self.created_files.extend(files)
             
             # Success summary
