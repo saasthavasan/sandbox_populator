@@ -12,7 +12,7 @@ from config import (
     USER_STATE, USER_ZIP, TAX_YEARS, FEDERAL_TAX_BRACKETS,
     STATE_TAX_BRACKETS, USER_FIRST_NAME, USER_LAST_NAME
 )
-from utils.helpers import format_currency, ensure_directory
+from utils.helpers import format_currency, ensure_directory, create_pdf
 
 
 class TaxDocumentGenerator:
@@ -322,19 +322,19 @@ Issued: January 28, {year + 1}
             # Federal return
             federal_content = self.generate_federal_tax_return(year)
             federal_file = year_folder / f"Form_1040_Federal_{year}.pdf"
-            federal_file.write_text(federal_content, encoding='utf-8')
+            create_pdf(federal_file, f"Form 1040 Federal {year}", [("Return", federal_content)])
             created_files.append(federal_file)
             
             # State return
             state_content = self.generate_state_tax_return(year)
             state_file = year_folder / f"Form_540_California_{year}.pdf"
-            state_file.write_text(state_content, encoding='utf-8')
+            create_pdf(state_file, f"Form 540 California {year}", [("Return", state_content)])
             created_files.append(state_file)
             
             # W-2
             w2_content = self.generate_w2_form(year)
             w2_file = year_folder / f"W2_Form_{year}.pdf"
-            w2_file.write_text(w2_content, encoding='utf-8')
+            create_pdf(w2_file, f"W-2 {year}", [("W-2", w2_content)])
             created_files.append(w2_file)
             
             print(f"    ✓ Generated tax documents for {year}")

@@ -9,7 +9,14 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from config import USER_NAME, USER_EMAIL, COMPANY_NAME, CURRENT_DATE
-from utils.helpers import format_currency, ensure_directory, random_date
+from utils.helpers import (
+    format_currency,
+    ensure_directory,
+    random_date,
+    create_pdf,
+    create_workbook,
+    create_presentation,
+)
 
 
 class OfficeDocumentGenerator:
@@ -532,70 +539,77 @@ DATE: {CURRENT_DATE.strftime('%B %d, %Y')}
         office_folder = self.base_path / "Desktop" / "Office"
         ensure_directory(office_folder)
         
-        # Generate quarterly reports
+        # Generate quarterly reports as PDFs
         reports_folder = office_folder / "Reports"
         ensure_directory(reports_folder)
         
         for year in [2024, 2025]:
             for quarter in range(1, 5 if year == 2024 else 1):
                 report = self.generate_quarterly_report(quarter, year)
-                file_path = reports_folder / f"Q{quarter}_{year}_Report.docx"
-                file_path.write_text(report, encoding='utf-8')
-                created_files.append(file_path)
+                pdf_path = reports_folder / f"Q{quarter}_{year}_Report.pdf"
+                create_pdf(pdf_path, f"Q{quarter} {year} Business Report", [("Content", report)])
+                created_files.append(pdf_path)
         
-        print(f"    ✓ Generated quarterly reports")
+        print(f"    ✓ Generated quarterly reports (PDF)")
         
-        # Generate presentations
+        # Generate presentations with python-pptx
         presentations_folder = office_folder / "Presentations"
         ensure_directory(presentations_folder)
         
+        base_slides = []
         for i in range(3):
             pres = self.generate_meeting_presentation()
-            file_path = presentations_folder / f"Presentation_{i+1}.pptx"
-            file_path.write_text(pres, encoding='utf-8')
-            created_files.append(file_path)
+            base_slides.append({"title": f"Presentation {i+1}", "bullets": pres.splitlines()[:10]})
+        deck_path = presentations_folder / "Quarterly_Roadmap.pptx"
+        create_presentation(deck_path, base_slides)
+        created_files.append(deck_path)
 
-        # Add a few extra ad-hoc slide decks to look “lived in”
-        topics = ["Quarterly Townhall", "Incident Postmortem", "Recruiting Update", "Product Strategy"]
-        for topic in topics:
-            content = (
-                f"PRESENTATION OUTLINE\n{topic}\n\n"
-                f"Slides:\n"
-                f" 1. {topic} Overview\n"
-                f" 2. Highlights\n"
-                f" 3. Challenges\n"
-                f" 4. Next Steps\n"
-                f" 5. Q&A\n"
-                f"\nGenerated: {datetime.now().strftime('%B %d, %Y')}\n"
-            )
+        ad_hoc_topics = ["Quarterly Townhall", "Incident Postmortem", "Recruiting Update", "Product Strategy"]
+        for topic in ad_hoc_topics:
+            slides = [
+                {"title": topic, "bullets": ["Overview", "Highlights", "Challenges", "Next Steps", "Q&A"]},
+                {"title": "Highlights", "bullets": ["Key wins", "Metrics", "Customer feedback"]},
+                {"title": "Risks", "bullets": ["Staffing", "Timeline", "Dependencies"]},
+            ]
             deck_file = presentations_folder / f"{topic.replace(' ', '_')}.pptx"
-            deck_file.write_text(content, encoding="utf-8")
+            create_presentation(deck_file, slides)
             created_files.append(deck_file)
         
-        print(f"    ✓ Generated presentations")
+        print(f"    ✓ Generated presentations (PPTX)")
         
-        # Generate spreadsheets
+        # Generate spreadsheets using openpyxl
         spreadsheets_folder = office_folder / "Spreadsheets"
         ensure_directory(spreadsheets_folder)
         
         for i in range(2):
-            sheet = self.generate_spreadsheet_data()
-            file_path = spreadsheets_folder / f"Budget_Tracking_{i+1}.xlsx"
-            file_path.write_text(sheet, encoding='utf-8')
-            created_files.append(file_path)
+            budget_file = spreadsheets_folder / f"Budget_Tracking_{i+1}.xlsx"
+            create_workbook(
+                budget_file,
+                [
+                    ("Budget", [
+                        ["Category", "Jan", "Feb", "Mar", "Q1 Total", "Budget", "Variance"],
+                        ["Salaries", "85000", "85000", "87000", "257000", "255000", "-2000"],
+                        ["Cloud Services", "12500", "13200", "12800", "38500", "40000", "1500"],
+                        ["Software Licenses", "5400", "5400", "5600", "16400", "18000", "1600"],
+                        ["Office Supplies", "450", "380", "520", "1350", "1500", "150"],
+                        ["Training", "2000", "1500", "3000", "6500", "6000", "-500"],
+                    ])
+                ],
+            )
+            created_files.append(budget_file)
         
-        print(f"    ✓ Generated spreadsheets")
+        print(f"    ✓ Generated spreadsheets (XLSX)")
         
-        # Generate project proposals
+        # Generate project proposals as PDFs
         projects_folder = office_folder / "Projects"
         ensure_directory(projects_folder)
         
         for i in range(2):
             proposal = self.generate_project_proposal()
-            file_path = projects_folder / f"Project_Proposal_{i+1}.docx"
-            file_path.write_text(proposal, encoding='utf-8')
-            created_files.append(file_path)
+            pdf_path = projects_folder / f"Project_Proposal_{i+1}.pdf"
+            create_pdf(pdf_path, "Project Proposal", [("Proposal", proposal)])
+            created_files.append(pdf_path)
         
-        print(f"    ✓ Generated project proposals")
+        print(f"    ✓ Generated project proposals (PDF)")
         
         return created_files

@@ -137,6 +137,80 @@ def firefox_timestamp(dt: datetime) -> int:
     return int(dt.timestamp() * 1_000_000)
 
 
+def create_pdf(path, title, sections):
+    """
+    Create a simple multi-section PDF using fpdf2.
+    sections: iterable of (heading, body_text)
+    """
+    from fpdf import FPDF
+
+    def _safe(text: str) -> str:
+        return text.encode("latin-1", "replace").decode("latin-1")
+
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", "B", 16)
+    pdf.cell(0, 10, _safe(title), ln=1)
+    pdf.ln(4)
+
+    for heading, body in sections:
+        pdf.set_font("Arial", "B", 12)
+        pdf.cell(0, 8, _safe(heading), ln=1)
+        pdf.set_font("Arial", "", 10)
+        for line in body.splitlines():
+            pdf.multi_cell(0, 6, _safe(line))
+        pdf.ln(2)
+
+    pdf.output(str(path))
+    return Path(path)
+
+
+def create_workbook(path, sheets):
+    """
+    Create an XLSX workbook using openpyxl.
+    sheets: list of tuples (sheet_name, rows) where rows is a list of row lists.
+    """
+    from openpyxl import Workbook
+
+    wb = Workbook()
+    # clear the default sheet
+    wb.remove(wb.active)
+    for sheet_name, rows in sheets:
+        ws = wb.create_sheet(sheet_name[:31] or "Sheet")
+        for row in rows:
+            ws.append(row)
+    wb.save(path)
+    return Path(path)
+
+
+def create_presentation(path, slides):
+    """
+    Create a PPTX presentation using python-pptx.
+    slides: list of dicts {title: str, bullets: [str]}
+    """
+    from pptx import Presentation
+    from pptx.util import Inches, Pt
+
+    prs = Presentation()
+    for slide in slides:
+        layout = prs.slide_layouts[1]  # Title and content
+        s = prs.slides.add_slide(layout)
+        s.shapes.title.text = slide.get("title", "")
+        body = s.placeholders[1]
+        tf = body.text_frame
+        tf.clear()
+        for i, bullet in enumerate(slide.get("bullets", [])):
+            if i == 0:
+                tf.text = bullet
+                tf.paragraphs[0].font.size = Pt(18)
+            else:
+                p = tf.add_paragraph()
+                p.text = bullet
+                p.level = 1
+    prs.save(path)
+    return Path(path)
+
+
 def get_windows_paths(base_override: str | Path | None = None):
     """
     Resolve Windows-style user directories (Desktop, Documents, Downloads, AppData, Program Files).

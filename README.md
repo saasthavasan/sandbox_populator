@@ -53,7 +53,11 @@ Malware often checks for signs of sandbox environments (empty browser history, l
 ## 📋 Requirements
 
 - Python 3.7+
-- No external dependencies (uses only standard library)
+- Install dependencies:
+
+```bash
+pip install -r requirements.txt
+```
 
 ## 🚀 Installation
 

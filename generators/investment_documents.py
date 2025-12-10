@@ -12,7 +12,12 @@ from config import (
     USER_NAME, USER_ADDRESS, USER_CITY, USER_STATE, USER_ZIP,
     STOCK_HOLDINGS, ETF_HOLDINGS, BOND_HOLDINGS, TAX_YEARS
 )
-from utils.helpers import format_currency, ensure_directory, random_date
+from utils.helpers import (
+    format_currency,
+    ensure_directory,
+    random_date,
+    create_workbook,
+)
 
 
 class InvestmentDocumentGenerator:
@@ -113,7 +118,7 @@ class InvestmentDocumentGenerator:
         }
     
     def generate_annual_statement(self, year):
-        """Generate complete annual investment statement"""
+        """Generate complete annual investment statement and return text plus transactions"""
         
         # Generate transactions
         stock_transactions = []
@@ -299,7 +304,7 @@ Thank you for choosing Fidelity Investments.
 ═══════════════════════════════════════════════════════════════════════════
 """
         
-        return content
+        return content, stock_transactions, etf_transactions, bond_transactions, portfolio_value, total_invested, total_proceeds
     
     def generate_all_investment_documents(self):
         """Generate investment statements for all years"""
@@ -311,11 +316,70 @@ Thank you for choosing Fidelity Investments.
         ensure_directory(investments_folder)
         
         for year in TAX_YEARS:
-            statement_content = self.generate_annual_statement(year)
+            (
+                statement_content,
+                stock_transactions,
+                etf_transactions,
+                bond_transactions,
+                portfolio_value,
+                total_invested,
+                total_proceeds,
+            ) = self.generate_annual_statement(year)
+
+            summary_rows = [
+                ["Account Holder", USER_NAME],
+                ["Account Number", "****-****-5827"],
+                ["Period", f"Jan 1 {year} - Dec 31 {year}"],
+                ["Ending Balance", format_currency(portfolio_value)],
+                ["Total Invested", format_currency(total_invested)],
+                ["Total Proceeds", format_currency(total_proceeds)],
+                [],
+            ]
+
+            # Build transactions table
+            tx_rows = [["Date", "Type", "Symbol/Bond", "Quantity", "Price", "Total"]]
+            for tx in stock_transactions:
+                tx_rows.append(
+                    [
+                        tx["date"].strftime("%m/%d/%Y"),
+                        tx["type"],
+                        tx["symbol"],
+                        tx["shares"],
+                        tx["price"],
+                        tx["total"],
+                    ]
+                )
+            for tx in etf_transactions:
+                tx_rows.append(
+                    [
+                        tx["date"].strftime("%m/%d/%Y"),
+                        tx["type"],
+                        tx["symbol"],
+                        tx["shares"],
+                        tx["price"],
+                        tx["total"],
+                    ]
+                )
+            for tx in bond_transactions:
+                tx_rows.append(
+                    [
+                        tx["date"].strftime("%m/%d/%Y"),
+                        tx["type"],
+                        tx["bond"],
+                        tx["units"],
+                        tx["price"],
+                        tx["total"],
+                    ]
+                )
+
+            sheets = [
+                (f"Summary_{year}", summary_rows),
+                (f"Transactions_{year}", tx_rows),
+            ]
+
             statement_file = investments_folder / f"Investment_Statement_{year}.xlsx"
-            statement_file.write_text(statement_content, encoding='utf-8')
+            create_workbook(statement_file, sheets)
             created_files.append(statement_file)
-            
             print(f"    ✓ Generated investment statement for {year}")
         
         return created_files

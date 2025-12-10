@@ -14,6 +14,7 @@ from utils.helpers import (
     format_currency,
     ensure_directory,
     write_binary_file,
+    create_pdf,
 )
 
 # Minimal 1x1 JPEG used to seed realistic photo files
@@ -368,7 +369,7 @@ ITEMS PURCHASED:
         
         health_record = self.generate_health_records()
         health_file = health_folder / "Health_Records.pdf"
-        health_file.write_text(health_record, encoding='utf-8')
+        create_pdf(health_file, "Personal Health Records", [("Health", health_record)])
         created_files.append(health_file)
         
         print(f"    ✓ Generated health records")
@@ -381,7 +382,7 @@ ITEMS PURCHASED:
             receipt = self.generate_receipt()
             date = datetime.now() - timedelta(days=random.randint(1, 90))
             receipt_file = receipts_folder / f"Receipt_{date.strftime('%Y%m%d')}_{i+1}.pdf"
-            receipt_file.write_text(receipt, encoding='utf-8')
+            create_pdf(receipt_file, "Receipt", [("Receipt", receipt)])
             created_files.append(receipt_file)
         
         print(f"    ✓ Generated receipts")
